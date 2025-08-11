@@ -1,0 +1,2 @@
+# golang
+Educational Golang repository
