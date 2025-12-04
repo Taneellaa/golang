@@ -7,30 +7,24 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"tasks-crud/models"
 	"time"
 )
 
-type Task struct {
-    ID        int       `json:"id"`
-    Title     string    `json:"title"`
-    Completed bool      `json:"completed"`
-    CreatedAt time.Time `json:"created_at"`
-}
-
 var (
-    tasks     = make(map[int]Task)  
+    tasks     = make(map[int]models.Task)  
     currentID = 1                   
     mu        sync.RWMutex          
 )
 
 func main() {
-    tasks[1] = Task{
+    tasks[1] = models.Task{
         ID:        1,
         Title:     "Выучить основы Go",
         Completed: false,
         CreatedAt: time.Now(),
     }
-    tasks[2] = Task{
+    tasks[2] = models.Task{
         ID:        2,
         Title:     "Написать первое API",
         Completed: true,
@@ -38,7 +32,6 @@ func main() {
     }
     currentID = 3
 
-    http.HandleFunc("/", homePage)
     http.HandleFunc("/tasks", handleTasks)      
     http.HandleFunc("/tasks/", handleTaskById)  
 
@@ -51,21 +44,6 @@ func main() {
     fmt.Println("   DELETE /tasks/{id} - удалить задачу")
     
     log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func homePage(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, `
-    <h1>📋 Todo API</h1>
-    <p>Доступные эндпоинты:</p>
-    <ul>
-        <li><b>GET</b> /tasks - все задачи</li>
-        <li><b>POST</b> /tasks - создать задачу</li>
-        <li><b>GET</b> /tasks/{id} - задача по ID</li>
-        <li><b>PUT</b> /tasks/{id} - обновить задачу</li>
-        <li><b>DELETE</b> /tasks/{id} - удалить задачу</li>
-    </ul>
-    <p>Используйте Postman или curl для тестирования</p>
-    `)
 }
 
 func handleTasks(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +85,7 @@ func getAllTasks(w http.ResponseWriter) {
     mu.RLock()
     defer mu.RUnlock()
 
-    taskList := make([]Task, 0, len(tasks))
+    taskList := make([]models.Task, 0, len(tasks))
     for _, task := range tasks {
         taskList = append(taskList, task)
     }
@@ -116,7 +94,7 @@ func getAllTasks(w http.ResponseWriter) {
 }
 
 func createTask(w http.ResponseWriter, r *http.Request) {
-    var task Task
+    var task models.Task
     err := json.NewDecoder(r.Body).Decode(&task)
     if err != nil {
         errorResponse(w, "Неверный JSON", http.StatusBadRequest)
