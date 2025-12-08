@@ -1,26 +1,65 @@
 basePath: /api/v1
 definitions:
+  domain.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/domain.User'
+    type: object
   domain.CreateTaskRequest:
-    description: Данные для создания задачи
+    description: Запрос для создания новой задачи
     properties:
       title:
-        example: Новая задача
+        example: Learn Go programming
         type: string
     required:
     - title
     type: object
+  domain.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
   domain.ErrorResponse:
-    description: Структура ошибки API
+    description: Стандартная структура ответа при ошибках
     properties:
       details:
-        example: database connection failed
+        example: Task with id 5 not found
         type: string
       error:
-        example: Failed to get tasks
+        example: Not found
+        type: string
+      status:
+        example: 404
+        type: integer
+      timestamp:
+        example: "2023-12-08T13:17:27Z"
         type: string
     type: object
+  domain.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
   domain.Task:
-    description: Структура задачи
+    description: Модель задачи пользователя
     properties:
       completed:
         example: false
@@ -31,56 +70,108 @@ definitions:
         example: 1
         type: integer
       title:
-        example: Купить молоко
+        example: Learn Go
         type: string
       updated_at:
         type: string
     type: object
   domain.UpdateTaskRequest:
-    description: Данные для обновления задачи
+    description: Запрос для обновления существующей задачи
     properties:
       completed:
         example: true
         type: boolean
       title:
-        example: Обновленная задача
+        example: Learn Go programming
+        type: string
+    type: object
+  domain.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      username:
         type: string
     type: object
 host: localhost:8080
 info:
   contact:
-    email: support@todoapp.com
-    name: API Support
-  description: Простое REST API для управления задачами
+    email: artemiy.zverev@bk.ru
+    name: Artemij Zverev
+    url: https://github.com/Taneellaa
+  description: REST API for task management with JWT authentication
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  termsOfService: http://swagger.io/terms/
-  title: Todo API
-  version: "1.0"
+  title: Taneellaa API with JWT Authentication
+  version: 1.0.0
 paths:
-  /health:
-    get:
+  /auth/login:
+    post:
       consumes:
       - application/json
-      description: Проверка работоспособности сервиса
+      description: Authenticate user and get JWT token
+      parameters:
+      - description: User credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Проверка здоровья API
+            $ref: '#/definitions/domain.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Login user
       tags:
-      - system
-  /tasks:
-    get:
+      - auth
+  /auth/register:
+    post:
       consumes:
       - application/json
-      description: Получить список всех задач
+      description: Create a new user account
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Register new user
+      tags:
+      - auth
+  /tasks:
+    get:
+      description: Get list of all tasks
       produces:
       - application/json
       responses:
@@ -90,19 +181,17 @@ paths:
             items:
               $ref: '#/definitions/domain.Task'
             type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-      summary: Получить все задачи
+      security:
+      - BearerAuth: []
+      summary: Get all tasks
       tags:
       - tasks
     post:
       consumes:
       - application/json
-      description: Создать новую задачу
+      description: Create a new task
       parameters:
-      - description: Данные задачи
+      - description: Task data
         in: body
         name: task
         required: true
@@ -119,46 +208,36 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-      summary: Создать задачу
+      security:
+      - BearerAuth: []
+      summary: Create a new task
       tags:
       - tasks
   /tasks/{id}:
     delete:
-      consumes:
-      - application/json
-      description: Удалить задачу по её идентификатору
+      description: Delete a task by ID
       parameters:
-      - description: ID задачи
+      - description: Task ID
         in: path
         name: id
         required: true
         type: integer
-      produces:
-      - application/json
       responses:
         "204":
           description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
-      summary: Удалить задачу
+      security:
+      - BearerAuth: []
+      summary: Delete a task
       tags:
       - tasks
     get:
-      consumes:
-      - application/json
-      description: Получить задачу по её идентификатору
+      description: Get a specific task by ID
       parameters:
-      - description: ID задачи
+      - description: Task ID
         in: path
         name: id
         required: true
@@ -170,28 +249,26 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/domain.Task'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
-      summary: Получить задачу по ID
+      security:
+      - BearerAuth: []
+      summary: Get task by ID
       tags:
       - tasks
     put:
       consumes:
       - application/json
-      description: Обновить существующую задачу
+      description: Update an existing task
       parameters:
-      - description: ID задачи
+      - description: Task ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Обновленные данные задачи
+      - description: Updated task data
         in: body
         name: task
         required: true
@@ -212,9 +289,15 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
-      summary: Обновить задачу
+      security:
+      - BearerAuth: []
+      summary: Update a task
       tags:
       - tasks
-schemes:
-- http
+securityDefinitions:
+  BearerAuth:
+    description: JWT Authorization header. Введите ТОЛЬКО токен.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

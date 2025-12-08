@@ -9,10 +9,10 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "API Support",
-            "email": "support@todoapp.com"
+            "name": "Artemij Zverev",
+            "url": "https://github.com/Taneellaa",
+            "email": "artemiy.zverev@bk.ru"
         },
         "license": {
             "name": "MIT",
@@ -23,9 +23,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/health": {
-            "get": {
-                "description": "Проверка работоспособности сервиса",
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user and get JWT token",
                 "consumes": [
                     "application/json"
                 ],
@@ -33,17 +33,83 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "system"
+                    "auth"
                 ],
-                "summary": "Проверка здоровья API",
+                "summary": "Login user",
+                "parameters": [
+                    {
+                        "description": "User credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.LoginRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/domain.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Create a new user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register new user",
+                "parameters": [
+                    {
+                        "description": "User registration data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     }
                 }
@@ -51,17 +117,19 @@ const docTemplate = `{
         },
         "/tasks": {
             "get": {
-                "description": "Получить список всех задач",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
+                "description": "Get list of all tasks",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "tasks"
                 ],
-                "summary": "Получить все задачи",
+                "summary": "Get all tasks",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -71,17 +139,16 @@ const docTemplate = `{
                                 "$ref": "#/definitions/domain.Task"
                             }
                         }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
                     }
                 }
             },
             "post": {
-                "description": "Создать новую задачу",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new task",
                 "consumes": [
                     "application/json"
                 ],
@@ -91,10 +158,10 @@ const docTemplate = `{
                 "tags": [
                     "tasks"
                 ],
-                "summary": "Создать задачу",
+                "summary": "Create a new task",
                 "parameters": [
                     {
-                        "description": "Данные задачи",
+                        "description": "Task data",
                         "name": "task",
                         "in": "body",
                         "required": true,
@@ -115,33 +182,29 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
                     }
                 }
             }
         },
         "/tasks/{id}": {
             "get": {
-                "description": "Получить задачу по её идентификатору",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
+                "description": "Get a specific task by ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "tasks"
                 ],
-                "summary": "Получить задачу по ID",
+                "summary": "Get task by ID",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID задачи",
+                        "description": "Task ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -154,12 +217,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.Task"
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -169,7 +226,12 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Обновить существующую задачу",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing task",
                 "consumes": [
                     "application/json"
                 ],
@@ -179,17 +241,17 @@ const docTemplate = `{
                 "tags": [
                     "tasks"
                 ],
-                "summary": "Обновить задачу",
+                "summary": "Update a task",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID задачи",
+                        "description": "Task ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновленные данные задачи",
+                        "description": "Updated task data",
                         "name": "task",
                         "in": "body",
                         "required": true,
@@ -220,21 +282,20 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Удалить задачу по её идентификатору",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Delete a task by ID",
                 "tags": [
                     "tasks"
                 ],
-                "summary": "Удалить задачу",
+                "summary": "Delete a task",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID задачи",
+                        "description": "Task ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -243,12 +304,6 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
                     },
                     "404": {
                         "description": "Not Found",
@@ -261,8 +316,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "domain.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/domain.User"
+                }
+            }
+        },
         "domain.CreateTaskRequest": {
-            "description": "Данные для создания задачи",
+            "description": "Запрос для создания новой задачи",
             "type": "object",
             "required": [
                 "title"
@@ -270,26 +336,71 @@ const docTemplate = `{
             "properties": {
                 "title": {
                     "type": "string",
-                    "example": "Новая задача"
+                    "example": "Learn Go programming"
+                }
+            }
+        },
+        "domain.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
                 }
             }
         },
         "domain.ErrorResponse": {
-            "description": "Структура ошибки API",
+            "description": "Стандартная структура ответа при ошибках",
             "type": "object",
             "properties": {
                 "details": {
                     "type": "string",
-                    "example": "database connection failed"
+                    "example": "Task with id 5 not found"
                 },
                 "error": {
                     "type": "string",
-                    "example": "Failed to get tasks"
+                    "example": "Not found"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 404
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-12-08T13:17:27Z"
+                }
+            }
+        },
+        "domain.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
                 }
             }
         },
         "domain.Task": {
-            "description": "Структура задачи",
+            "description": "Модель задачи пользователя",
             "type": "object",
             "properties": {
                 "completed": {
@@ -305,7 +416,7 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string",
-                    "example": "Купить молоко"
+                    "example": "Learn Go"
                 },
                 "updated_at": {
                     "type": "string"
@@ -313,7 +424,7 @@ const docTemplate = `{
             }
         },
         "domain.UpdateTaskRequest": {
-            "description": "Данные для обновления задачи",
+            "description": "Запрос для обновления существующей задачи",
             "type": "object",
             "properties": {
                 "completed": {
@@ -322,21 +433,46 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string",
-                    "example": "Обновленная задача"
+                    "example": "Learn Go programming"
                 }
             }
+        },
+        "domain.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "JWT Authorization header. Введите ТОЛЬКО токен.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "1.0.0",
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
-	Schemes:          []string{"http"},
-	Title:            "Todo API",
-	Description:      "Простое REST API для управления задачами",
+	Schemes:          []string{},
+	Title:            "Taneellaa API with JWT Authentication",
+	Description:      "REST API for task management with JWT authentication",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
