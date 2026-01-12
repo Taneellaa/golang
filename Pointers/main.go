@@ -18,10 +18,10 @@ func main(){
 		fmt.Println("ptr:", ptr)
 
 
-	if ptr != nil {
-		fmt.Println("Разыменование:", *ptr)
-	} else {
-		fmt.Println("Получен nil-указатель")
-	}
+	//if ptr != nil {
+	//	fmt.Println("Разыменование:", *ptr)
+	//} else {
+	//	fmt.Println("Получен nil-указатель")
+	//}
 }
 
