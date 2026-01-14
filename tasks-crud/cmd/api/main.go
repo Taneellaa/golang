@@ -20,7 +20,7 @@ import (
 	"tasks-crud/internal/service"
 )
 
-// @title Taneellaa API with JWT Authentication
+// @title artemydottech API with JWT Authentication
 // @version 1.0.0
 // @description REST API for task management with JWT authentication
 
@@ -155,12 +155,11 @@ func main() {
 
 	// Вывод информации о конфигурации
 	fmt.Printf("📋 Конфигурация:\n")
-	fmt.Printf("   Порт: %d\n", cfg.Port)
-	fmt.Printf("   Окружение: %s\n", cfg.Env)
-	fmt.Printf("   JWT Expiry: %v\n", cfg.JWTExpiry)
-	fmt.Printf("   Bcrypt Cost: %d\n", cfg.BcryptCost)
+	fmt.Printf("Порт: %d\n", cfg.Port)
+	fmt.Printf("Окружение: %s\n", cfg.Env)
+	fmt.Printf("JWT Expiry: %v\n", cfg.JWTExpiry)
+	fmt.Printf("Bcrypt Cost: %d\n", cfg.BcryptCost)
 
-	// Предупреждение о дефолтном JWT секрете
 	if cfg.Env == "development" && cfg.JWTSecret == "your-secret-key-change-in-production" {
 		fmt.Println("⚠️ВНИМАНИЕ: Используется дефолтный JWT секрет. В продакшене установите JWT_SECRET!")
 	}
@@ -190,7 +189,7 @@ func main() {
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(MethodNotAllowedHandler)
 
-	fmt.Println("🛣️  Настройка маршрутов...")
+	fmt.Println("🛣️ Настройка маршрутов...")
 	public := router.PathPrefix("/api/v1").Subrouter()
 
 	public.HandleFunc("/auth/register", authHandler.Register).Methods("POST", "OPTIONS")
